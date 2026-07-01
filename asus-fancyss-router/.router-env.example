@@ -1,0 +1,6 @@
+# 路由器连接配置（复制为 .router-env 并填写；.router-env 不进 git）
+# 默认走 Tailscale IP —— 在外网/任何地方都能用（前提：本机 tailscale 在线、路由器 SSH 开着）
+# 若只在家用，也可填局域网 IP 192.168.50.1
+ROUTER_HOST=100.116.16.72
+ROUTER_USER=leimingcan
+ROUTER_PASS=your_password_here

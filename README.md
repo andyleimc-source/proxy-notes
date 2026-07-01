@@ -9,6 +9,7 @@
 | 问题 | 文档 |
 |------|------|
 | Apple 地图 Mac 版「路线不可用」——代理把定位/路线请求发到境外 | [apple-maps-route-unavailable.md](apple-maps-route-unavailable.md) |
+| 华硕路由器 fancyss 节点全 timeout（DNS 鸡生蛋 + 协议升级）+ Claude Code 远程切节点工具 | [asus-fancyss-router/](asus-fancyss-router/) |
 
 ## 通用心智
 

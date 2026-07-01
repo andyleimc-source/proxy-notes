@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# node-ctl —— 从任意一台 Mac（在 Tailscale 上）远程控制路由器 fancyss 节点
+# 用法：
+#   ./node-ctl list            列出所有节点（标记当前）
+#   ./node-ctl current         当前生效节点
+#   ./node-ctl speed           原生延迟测试，按延迟升序（覆盖所有协议，约 30-60s）
+#   ./node-ctl switch <id>     切换到指定 id 节点并应用
+#
+# 机制：SSH 到路由器（默认走 Tailscale IP，因此在外网也能用），把 lib/router-node-ctl.sh
+#       经 stdin 送入执行，不在路由器上落地安装。连接参数放在同目录 .router-env（不进 git）。
+set -euo pipefail
+
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ENVFILE="$DIR/.router-env"
+SCRIPT="$DIR/lib/router-node-ctl.sh"
+
+command -v sshpass >/dev/null 2>&1 || {
+  echo "缺少 sshpass。安装：brew install hudochenkov/sshpass/sshpass" >&2; exit 1; }
+[ -f "$ENVFILE" ] || {
+  echo "缺少连接配置 $ENVFILE" >&2
+  echo "→ cp '$DIR/.router-env.example' '$ENVFILE' 并填写 ROUTER_HOST/USER/PASS" >&2; exit 1; }
+[ -f "$SCRIPT" ] || { echo "缺少 $SCRIPT" >&2; exit 1; }
+
+# shellcheck disable=SC1090
+. "$ENVFILE"
+: "${ROUTER_HOST:?.router-env 缺 ROUTER_HOST}"
+: "${ROUTER_USER:?.router-env 缺 ROUTER_USER}"
+: "${ROUTER_PASS:?.router-env 缺 ROUTER_PASS}"
+
+# speed 要跑测速，超时给足
+CT=12
+case "${1:-}" in speed) CT=120 ;; switch) CT=90 ;; esac
+
+exec sshpass -p "$ROUTER_PASS" ssh \
+  -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR \
+  -o ConnectTimeout=10 -o ServerAliveInterval=15 -o ServerAliveCountMax="$CT" \
+  "$ROUTER_USER@$ROUTER_HOST" "sh -s -- $*" < "$SCRIPT"
