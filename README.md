@@ -23,3 +23,4 @@
 - **兜底规则用 `MATCH,DIRECT`（白名单）还是 `MATCH,Proxy`（黑名单）** 决定了订阅流量消耗量级：黑名单模式下 Apple 更新、AWS CDN、各种软件后台流量都在偷偷烧代理流量。
 - **换新机场/多订阅切换报 `proxy not found` 校验失败** → 全局 Merge 规则写死了某组名（如 `Proxy`），而新机场叫 `Proxies` 或其他。切忌手改原始文件或动全局规则，用该订阅的「Groups 扩展（prepend）」注入一条同名映射即可无缝共存。
 
+| Clash Verge 升级后只用 TUN：检查实际联网网卡上的残留系统代理 | [clash-verge-tun-vs-system-proxy.md](clash-verge-tun-vs-system-proxy.md) |
