@@ -7,6 +7,7 @@
 | 文件 | 说明 |
 |------|------|
 | [troubleshooting-2026-07.md](troubleshooting-2026-07.md) | 节点全 timeout 排障复盘：DNS 鸡生蛋 + 协议升级 + 手动升级 fancyss + UA 敏感订阅 |
+| [ac86u-vless-reality-setup.md](ac86u-vless-reality-setup.md) | 重置后从零装 FancySS Lite + Clash YAML 转 VLESS-Reality 导入 + DNS 劫持与 Mac 终端排障 |
 | `node-ctl` | 用 Claude Code / 命令行**远程切换节点 + 测速**的工具（下面） |
 | `lib/router-node-ctl.sh` | 上面工具在路由器侧执行的逻辑（随 SSH 送入，不落地安装） |
 

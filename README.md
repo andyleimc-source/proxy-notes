@@ -9,7 +9,7 @@
 | 问题 | 文档 |
 |------|------|
 | Apple 地图 Mac 版「路线不可用」——代理把定位/路线请求发到境外 | [apple-maps-route-unavailable.md](apple-maps-route-unavailable.md) |
-| 华硕路由器 fancyss 节点全 timeout（DNS 鸡生蛋 + 协议升级）+ Claude Code 远程切节点工具 | [asus-fancyss-router/](asus-fancyss-router/) |
+| 华硕路由器 fancyss 节点全 timeout（DNS 鸡生蛋 + 协议升级）+ Claude Code 远程切节点工具 + AC86U 从零装 VLESS-Reality 透明代理 | [asus-fancyss-router/](asus-fancyss-router/) |
 | 订阅流量烧太快（兜底 MATCH,Proxy 黑名单）→ 白名单改造 runbook + Claude Code 终端登录 403 大坑（fake-ip 被 Tailscale MagicDNS 抢答） | [clash-verge-whitelist/](clash-verge-whitelist/) |
 | 多机场/多订阅切换：策略组名不匹配（Proxy vs Proxies）校验报错与单订阅 Groups 别名解法 | [clash-verge-multi-profile-group-alias.md](clash-verge-multi-profile-group-alias.md) |
 | Claude Code 防封与环境检测全链路避坑：时区无感伪装、DNS 泄露根治与指纹防御 | [claude-code-stealth-and-dns-leak.md](claude-code-stealth-and-dns-leak.md) |
