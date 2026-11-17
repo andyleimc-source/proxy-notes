@@ -13,7 +13,7 @@
 服务器及代理的参考价来自 2026 年 11 月的一次实际订单，当时两项都关闭了自动续费。今天的库存、价格和条款以你自己的结算页为准。[TMHHost](https://www.tmhhost.com/) · [IPRoyal ISP 产品](https://iproyal.com/isp-proxies/) · [Claude 套餐](https://claude.com/pricing) · [Claude Code 系统要求](https://code.claude.com/docs/en/setup#system-requirements)
 
 - [ ] 在服务器商家选 Linux VPS、机房、内存、Ubuntu LTS 和月付。付款后在自己的密码管理器记下控制台入口、SSH 用户、公网地址、端口和续费日。
-- [ ] 需要固定出口时，在 IPRoyal 后台选 **ISP → Create a new order**，选国家、数量 1、期限 30 天。复现上述订单时选择 Singapore 和高级 IPQS 筛选，未加购多设备，未勾选每次续费更换 IP。付款后打开此订单，找到协议、端点、端口、认证方式及分配的出口 IPv4。到期前若要保留地址，按订单条款提前续费。[供应商操作说明](https://help.iproyal.com/en/articles/7955587-how-to-use-isp-proxies)
+- [ ] 需要固定出口时，在 IPRoyal 后台选 **ISP → Create a new order**，选国家、数量 1、期限 30 天。复现上述订单时选择 Singapore 和高级 IPQS 筛选，原订单未加购多设备，未勾选每次续费更换 IP。若要按第 6 节让手机和服务器共用出口，下单前向供应商确认该转发用途、并发和设备限制，再决定是否需要加购。付款后打开此订单，找到协议、端点、端口、认证方式及分配的出口 IPv4。到期前若要保留地址，按订单条款提前续费。[供应商操作说明](https://help.iproyal.com/en/articles/7955587-how-to-use-isp-proxies)
 
 ## 2. 从自己的电脑安全连入新服务器
 
@@ -101,6 +101,49 @@ ssh -p PORT -i ~/.ssh/claude-vps -N -o ExitOnForwardFailure=yes -L 127.0.0.1:188
 | 浏览器出口和订单不符 | 确认打开的是临时配置窗口、SSH 转发仍运行且端点正确。只在查到订单出口的窗口读取检测结果。 |
 | CLI 仍提示登录或账单来源异常 | 先用 `type claude` 核对入口，确认在同一 Linux 用户下保存了令牌。检查是否另设了 API key、云服务认证或自定义接口，避免误用另一个付费账号。不要把令牌放进命令行或发给协助的人。 |
 | 只有走代理的 Git 拉取失败 | 在 Git **已经走该代理**的环境，用 `git -c http.proxyAuthMethod=basic ls-remote <仓库HTTPS地址>` 做单次对照。若低内存机继承了异常大的 `http.postBuffer`，用 `git config --show-origin --get http.postBuffer` 查来源；原实机将本机覆盖值调到 1048576 后恢复。 |
+
+## 6. 安卓手机通过 WireGuard 与服务器共用固定 IP
+
+### 当前状态与目标
+
+方案已记录，等待手机使用者买好自己的固定 IP。服务器转发、手机安装配置、端口开放和实际网络验收均待部署。第 3 节的小工具用于本机 Claude Code，手机流量还需要下面的服务器转发层。
+
+安卓手机使用官方 WireGuard 客户端，通过 Wi-Fi 或移动网络建立到自己 VPS 的加密连接。VPS 将这条连接中的上网流量交给订单分配的固定出口，服务器本机 Claude Code 同时使用这枚出口。手机 Wi-Fi 保留原有连接，隧道控制其上网路径。官方提供 Google Play 与直接下载 APK 两种安装方式，一加 6 / 7 的具体兼容情况按手机当前安卓版本确认。[WireGuard 官方下载](https://www.wireguard.com/install/)
+
+```text
+安卓手机 → WireGuard 加密隧道 → 自己的 VPS → 固定代理出口 → 目标网站
+                                      ↑
+                     VPS 上的 Claude Code
+                     使用同一订单、同一固定出口
+```
+
+### 购买与部署前要收齐的信息
+
+- [ ] 确认手机实际型号、安卓版本、原有 VPN 应用以及日常使用 Wi-Fi 的网络。安卓 VPN 应用之间可能互相占用系统 VPN 接口，部署时要核对能否同时工作。
+- [ ] 固定 IP 订单选择独享、固定、1 个、30 天。需要新加坡出口时选 Singapore，续期保留原 IP。下单前向客服说明“手机经自有 VPS 转发，与 VPS 上的客户端共用这一出口”，确认用途、并发连接、设备限制和流量额度。这个方案是否需要多设备加购，以客服对订单的确认为准。
+- [ ] 保存供应商的 HTTP(S)、SOCKS5 端点和认证方式，确认两种协议会用同一枚出口 IPv4。供应商当前文档声明 ISP 产品支持 TCP 和 UDP，具体订单的 UDP 转发能力仍需实际测试。[IPRoyal 协议说明](https://help.iproyal.com/en/articles/7222110-what-protocols-do-isp-proxies-support)
+- [ ] 在 VPS 控制台核对实际 CPU、内存、磁盘、内核和安全组，保留网页恢复入口。确认手机所在网络可以连通 VPS 的 WireGuard UDP 入口；连通性影响这条方案是否可用。
+
+### 买好后按此顺序实施
+
+1. 在 VPS 安装 WireGuard，建立手机专用密钥和独立隧道地址。手机端优先在本机生成私钥，服务器只登记其公钥。仅向该手机交付所需的连接配置，限制接入者和隧道来源范围。
+2. 在 VPS 部署转发层。候选采用 sing-box TUN，将来自 WireGuard 隧道网段的流量通过策略路由送入转发层，再接到订单的 SOCKS5 上游。到实际部署时根据稳定版本和内核生成配置，并验证 TCP、UDP。必须为代理端点连接、WireGuard 外层握手及管理连接保留正确路由，避免转发环路。[TUN 文档](https://sing-box.sagernet.org/configuration/inbound/tun/) · [SOCKS 上游文档](https://sing-box.sagernet.org/configuration/outbound/socks/)
+3. 在 VPS 上继续让官方 Claude Code 使用第 3 节的 HTTP(S) 代理入口，核对它和手机 SOCKS5 上游实际使用同一枚出口 IP。Claude Code 官方支持 HTTP(S) 代理，协议选择按客户端能力分别设置。[Claude Code 网络说明](https://code.claude.com/docs/en/network-config)
+4. 配置手机全局隧道路由和隧道内 DNS，检查 IPv4、IPv6 都被接管。供应商不支持 IPv6 时明确阻断隧道中的 IPv6 直连。让 DNS 请求通过受控转发路径解析，分别核实 DNS 走向和解析器的数据库定位。
+5. 在服务器防火墙中限制手机隧道流量只能经受控转发层出去，上游不可用时停止该流量。手机若支持“始终开启 VPN”和“阻止未使用 VPN 的连接”，一并启用并测试。隧道断开或代理失效时应显示网络失败，覆盖 Wi-Fi、移动网络和重启场景。
+6. 在手机导入连接配置、开启隧道，逐项完成下方验收后再交付。手机上的代理订单密码可以留在 VPS，手机仅保存其 WireGuard 密钥及连接参数。
+
+这条链路的 WireGuard 加密覆盖手机到 VPS。VPS 至上游代理的加密能力取决于上游协议，部署时核对该段传输与凭据保护，访问 HTTPS 网站继续校验网站证书。上面的 sing-box 转发组合是待验证设计，最终部署配置和实测结果完成后回填本卡。
+
+### 交付验收
+
+- [ ] 手机连接 Wi-Fi、打开隧道，访问两个出口查询服务，显示订单分配的固定 IPv4。
+- [ ] 同时在 VPS 新 SSH 和 tmux 窗口运行日常入口的 `claude exit-ip`，与手机及订单一致。该命令核对启动环境的出口；CLI 本身的请求归因可按第 4 节做单独用量对照。
+- [ ] 在手机同一浏览器打开第 4 节的两个完整检测页，记录 DNS、IPv6、WebRTC 及出口，检查有无出现额外公网地址。记录日期和网络条件。
+- [ ] 验证 UDP 流量、DNS 及代表性应用能正常使用。同 IP 的目标是经隧道转发的受支持上网流量，具体协议限制和不可用的应用应如实登记。
+- [ ] 关闭上游代理、停止转发服务、断开 WireGuard，分别验证每种故障时手机是否阻断上网，服务器客户端是否报错。恢复后再核对出口。
+- [ ] Wi-Fi 与移动网络切换、手机锁屏后唤醒、手机和 VPS 重启后复验。各次出口一致，VPN 保持方式与失败表现已让使用者理解。
+- [ ] 确认服务器带宽、代理流量额度及续费日，分别记录“隧道部署”“固定出口验收”“Claude 登录”“真实对话”的完成状态。
 
 ## 交付时只回这几项
 
