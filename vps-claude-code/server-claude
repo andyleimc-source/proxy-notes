@@ -1,0 +1,98 @@
+#!/usr/bin/env python3
+"""Run the official native Claude Code CLI with this Linux user's dedicated proxy."""
+
+import getpass
+import ipaddress
+import os
+import re
+import sys
+import tempfile
+from pathlib import Path
+from urllib.parse import quote
+
+
+CONFIG = Path.home() / ".config" / "server-claude"
+PROXY = CONFIG / "proxy-url"
+TOKEN = CONFIG / "oauth-token"
+
+
+def save_private(path, value):
+    CONFIG.mkdir(mode=0o700, parents=True, exist_ok=True)
+    CONFIG.chmod(0o700)
+    with tempfile.NamedTemporaryFile(mode="w", dir=CONFIG, delete=False) as temp:
+        try:
+            temp.write(value + "\n")
+            temp.flush()
+            os.replace(temp.name, path)
+        finally:
+            Path(temp.name).unlink(missing_ok=True)
+
+
+def configure_proxy():
+    scheme = input("订单给出的代理协议 (http / https): ").strip().lower()
+    host = input("订单中的代理服务器 (IPv4 或域名): ").strip()
+    port = input("端口: ").strip()
+    if scheme not in ("http", "https") or not re.fullmatch(r"[A-Za-z0-9.-]+", host):
+        sys.exit("请核对协议、IPv4 或域名。")
+    if not port.isascii() or not port.isdecimal() or not 1 <= int(port) <= 65535:
+        sys.exit("端口必须在 1 到 65535 之间。")
+    user = getpass.getpass("代理用户名 (仅已设置来源 IP 白名单时可留空): ")
+    auth = ""
+    if user:
+        password = getpass.getpass("代理密码: ")
+        if not password:
+            sys.exit("密码为空，原配置未改动。")
+        auth = f"{quote(user, safe='')}:{quote(password, safe='')}@"
+    save_private(PROXY, f"{scheme}://{auth}{host}:{port}")
+    print("已保存本机代理。运行 server-claude exit-ip 核对出口。")
+
+
+def save_token():
+    token = getpass.getpass("粘贴一次 setup-token 最后打印的长期令牌 (输入不显示): ")
+    prefix = "sk-ant-oat"
+    if token.count(prefix) != 1 or not re.fullmatch(r"sk-ant-oat[\w-]+", token, re.ASCII):
+        sys.exit("格式不符。请检查是否错贴网页短码、有空白或重复粘贴。")
+    save_private(TOKEN, token)
+    print("已保存。重新打开终端后运行 server-claude auth status --json。")
+
+
+def main():
+    args = sys.argv[1:]
+    if args == ["configure-proxy"]:
+        configure_proxy()
+        return
+    if args == ["save-token"]:
+        save_token()
+        return
+    if not PROXY.is_file():
+        sys.exit("缺少本机代理，请先运行 server-claude configure-proxy。")
+    proxy = PROXY.read_text().strip()
+    if not proxy.startswith(("http://", "https://")):
+        sys.exit("本机代理配置无效，请重新运行 configure-proxy。")
+    env = os.environ.copy()
+    for key in ("HTTP_PROXY", "HTTPS_PROXY", "http_proxy", "https_proxy"):
+        env[key] = proxy
+    for key in ("ALL_PROXY", "all_proxy", "CLAUDE_CODE_OAUTH_TOKEN"):
+        env.pop(key, None)
+    env["no_proxy"] = env["NO_PROXY"] = "localhost,127.0.0.1,::1"
+    if args == ["exit-ip"]:
+        import subprocess
+
+        result = subprocess.run(
+            ["curl", "-q", "-4", "-fsS", "--max-time", "15", "https://api.ipify.org"],
+            env=env, capture_output=True, text=True,
+        )
+        if result.returncode:
+            sys.exit(f"出口查询失败 (curl {result.returncode})，请复核代理订单和凭据。")
+        print(ipaddress.IPv4Address(result.stdout.strip()))
+        return
+    binary = Path.home() / ".local" / "bin" / "claude"
+    if not os.access(binary, os.X_OK):
+        sys.exit("未找到官方原生客户端，请按任务卡先安装。")
+    if TOKEN.is_file() and args != ["setup-token"]:
+        env["CLAUDE_CODE_OAUTH_TOKEN"] = TOKEN.read_text().strip()
+    os.execve(binary, [str(binary), *args], env)
+
+
+if __name__ == "__main__":
+    main()

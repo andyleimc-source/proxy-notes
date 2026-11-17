@@ -8,6 +8,7 @@
 
 | 问题 | 文档 |
 |------|------|
+| 任务卡：购买 Linux VPS 和独享固定 IP，配置与验收自己的 Claude Code | [服务器、固定出口与授权](vps-claude-code/README.md) |
 | Apple 地图 Mac 版「路线不可用」——代理把定位/路线请求发到境外 | [apple-maps-route-unavailable.md](apple-maps-route-unavailable.md) |
 | 华硕路由器 fancyss 节点全 timeout（DNS 鸡生蛋 + 协议升级）+ Claude Code 远程切节点工具 + AC86U 从零装 VLESS-Reality 透明代理 | [asus-fancyss-router/](asus-fancyss-router/) |
 | 订阅流量烧太快（兜底 MATCH,Proxy 黑名单）→ 白名单改造 runbook + Claude Code 终端登录 403 大坑（fake-ip 被 Tailscale MagicDNS 抢答） | [clash-verge-whitelist/](clash-verge-whitelist/) |
